@@ -3,6 +3,7 @@ package nbt
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/kch42/kagus"
 	"io"
 )
 
@@ -17,12 +18,6 @@ type TagList struct {
 }
 
 type TagCompound map[string]Tag
-
-func readByte(r io.Reader) (byte, error) {
-	buf := make([]byte, 1)
-	_, err := r.Read(buf)
-	return buf[0], err
-}
 
 func readTagData(r io.Reader, tt TagType) (interface{}, error) {
 	switch tt {
@@ -76,7 +71,7 @@ func readTagData(r io.Reader, tt TagType) (interface{}, error) {
 		_, err := io.ReadFull(r, data)
 		return string(data), err
 	case TAG_List:
-		ltt, err := readByte(r)
+		_ltt, err := kagus.ReadByte(r)
 		if err != nil {
 			return nil, err
 		}
