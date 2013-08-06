@@ -21,13 +21,46 @@ const (
 	TAG_Int_Array
 )
 
+type TagType byte
+
+func (tt TagType) String() string {
+	switch tt {
+	case TAG_End:
+		return "TAG_End"
+	case TAG_Byte:
+		return "TAG_Byte"
+	case TAG_Short:
+		return "TAG_Short"
+	case TAG_Int:
+		return "TAG_Int"
+	case TAG_Long:
+		return "TAG_Long"
+	case TAG_Float:
+		return "TAG_Float"
+	case TAG_Double:
+		return "TAG_Double"
+	case TAG_Byte_Array:
+		return "TAG_Byte_Array"
+	case TAG_String:
+		return "TAG_String"
+	case TAG_List:
+		return "TAG_List"
+	case TAG_Compound:
+		return "TAG_Compound"
+	case TAG_Int_Array:
+		return "TAG_Int_Array"
+	default:
+		return "TAG_Unknown"
+	}
+}
+
 type Tag struct {
-	Type    byte
+	Type    TagType
 	Payload interface{}
 }
 
 type TagList struct {
-	Type  byte
+	Type  TagType
 	Elems []interface{}
 }
 
@@ -39,7 +72,7 @@ func readByte(r io.Reader) (byte, error) {
 	return buf[0], err
 }
 
-func readTagData(r io.Reader, tt byte) (interface{}, error) {
+func readTagData(r io.Reader, tt TagType) (interface{}, error) {
 	switch tt {
 	case TAG_End:
 	case TAG_Byte:
@@ -95,6 +128,7 @@ func readTagData(r io.Reader, tt byte) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+		ltt := TagType(_ltt)
 
 		var l int32
 		if err := binary.Read(r, binary.BigEndian, &l); err != nil {
@@ -148,10 +182,12 @@ func readTagData(r io.Reader, tt byte) (interface{}, error) {
 }
 
 func ReadNamedTag(r io.Reader) (Tag, string, error) {
-	tt, err := readByte(r)
+	_tt, err := kagus.ReadByte(r)
 	if err != nil {
 		return Tag{}, "", err
 	}
+	tt := TagType(_tt)
+
 	if tt == TAG_End {
 		return Tag{Type: tt}, "", nil
 	}
@@ -170,7 +206,7 @@ func writeByte(w io.Writer, b byte) error {
 	return err
 }
 
-func writeTagData(w io.Writer, tt byte, data interface{}) error {
+func writeTagData(w io.Writer, tt TagType, data interface{}) error {
 	switch tt {
 	case TAG_End:
 		return nil
@@ -202,7 +238,7 @@ func writeTagData(w io.Writer, tt byte, data interface{}) error {
 		return err
 	case TAG_List:
 		list := data.(TagList)
-		if err := writeByte(w, list.Type); err != nil {
+		if err := writeByte(w, byte(list.Type)); err != nil {
 			return err
 		}
 
@@ -243,7 +279,7 @@ func writeTagData(w io.Writer, tt byte, data interface{}) error {
 }
 
 func WriteNamedTag(w io.Writer, name string, tag Tag) error {
-	if err := writeByte(w, tag.Type); err != nil {
+	if err := writeByte(w, byte(tag.Type)); err != nil {
 		return err
 	}
 
