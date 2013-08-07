@@ -253,11 +253,7 @@ func TestCreateBigtest(t *testing.T) {
 	comp["egg"] = makeNested("Eggbert", 0.5)
 	rootcomp["nested compound test"] = Tag{TAG_Compound, comp}
 
-	listlong := make([]interface{}, 5)
-	for i := 0; i < 5; i++ {
-		listlong[i] = int64(i + 11)
-	}
-	rootcomp["listTest (long)"] = Tag{TAG_List, TagList{TAG_Long, listlong}}
+	rootcomp["listTest (long)"] = NewListTag(TAG_Long, []int64{11, 12, 13, 14, 15})
 
 	listcomp := make([]interface{}, 2)
 	for i := 0; i < 2; i++ {
@@ -266,7 +262,7 @@ func TestCreateBigtest(t *testing.T) {
 		comp["created-on"] = NewLongTag(1264099775885)
 		listcomp[i] = comp
 	}
-	rootcomp["listTest (compound)"] = Tag{TAG_List, TagList{TAG_Compound, listcomp}}
+	rootcomp["listTest (compound)"] = NewListTag(TAG_Compound, listcomp)
 
 	data := make([]byte, 1000)
 	for n := 0; n < 1000; n++ {
