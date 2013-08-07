@@ -1,3 +1,4 @@
+// Package nbt provides functions for reading and writing NBT encoded data.
 package nbt
 
 import (
@@ -10,11 +11,27 @@ import (
 	"strconv"
 )
 
+// Tag holds the data of an NBT tag. Type is a TAG_* value.
+//
+// The type of Payload depends on Type:
+//
+// 	TAG_Byte       -- byte
+// 	TAG_Short      -- int16
+// 	TAG_Int        -- int32
+// 	TAG_Long       -- int64
+// 	TAG_Float      -- float32
+// 	TAG_Double     -- float64
+// 	TAG_Byte_Array -- []byte
+// 	TAG_String     -- string
+// 	TAG_List       -- TagList
+// 	TAG_Compound   -- TagCompound
+// 	TAG_Int_Array  -- []int32
 type Tag struct {
 	Type    TagType
 	Payload interface{}
 }
 
+// TagList is the payload of a TAG_List Tag. The type of the Elems depends on Type (see docu of Tag).
 type TagList struct {
 	Type  TagType
 	Elems []interface{}
@@ -65,6 +82,7 @@ func (t Tag) String() string {
 	return s
 }
 
+// TagCompund is the payload of a TAG_Compound.
 type TagCompound map[string]Tag
 
 func readTagData(r io.Reader, tt TagType) (interface{}, error) {
@@ -176,6 +194,7 @@ func readTagData(r io.Reader, tt TagType) (interface{}, error) {
 	return nil, errors.New("Unknown tag type")
 }
 
+// ReadNamedTag reads a named Tag from an io.Reader. It returns the Tag, the tags Name and an error.
 func ReadNamedTag(r io.Reader) (Tag, string, error) {
 	_tt, err := kagus.ReadByte(r)
 	if err != nil {
@@ -273,6 +292,7 @@ func writeTagData(w io.Writer, tt TagType, data interface{}) error {
 	return errors.New("Unknown tage type")
 }
 
+// WriteNamedTag writes a named Tag to an io.Writer.
 func WriteNamedTag(w io.Writer, name string, tag Tag) error {
 	if err := writeByte(w, byte(tag.Type)); err != nil {
 		return err
