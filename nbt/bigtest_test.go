@@ -3,6 +3,7 @@ package nbt
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"testing"
 )
 
@@ -54,6 +55,8 @@ func bigtest() []byte {
 		0x06, 0x00, 0x00,
 	}
 }
+
+func byteArrayTestSeries(n int) byte { return byte((n*n*255 + n*7) % 100) }
 
 func getKey(t *testing.T, comp TagCompound, key string, tt TagType) (tag Tag, ok bool) {
 	tag, ok = comp[key]
@@ -131,7 +134,10 @@ func nestedCompoundHelper(t *testing.T, comp TagCompound, id, name string, value
 }
 
 func TestBigtest(t *testing.T) {
-	r := bytes.NewReader(bigtest())
+	testBigtest(bytes.NewReader(bigtest()), t)
+}
+
+func testBigtest(r io.Reader, t *testing.T) {
 	root, name, err := ReadGzipdNamedTag(r)
 	if err != nil {
 		t.Fatalf("Could not read NBT data: %s", err)
@@ -214,7 +220,7 @@ func TestBigtest(t *testing.T) {
 			t.Errorf("byteArrayTest data has length %d, expected 1000", len(data))
 		} else {
 			for n := 0; n < 1000; n++ {
-				want := byte((n*n*255 + n*7) % 100)
+				want := byteArrayTestSeries(n)
 				if data[n] != want {
 					t.Errorf("Wrong byteArrayTest data at index %d: 0x%02x", n, data[n])
 					break
@@ -222,4 +228,58 @@ func TestBigtest(t *testing.T) {
 			}
 		}
 	}
+}
+
+func makeNested(name string, value float32) Tag {
+	comp := make(TagCompound)
+	comp["name"] = NewStringTag(name)
+	comp["value"] = NewFloatTag(value)
+	return Tag{TAG_Compound, comp}
+}
+
+func TestCreateBigtest(t *testing.T) {
+	rootcomp := make(TagCompound)
+
+	rootcomp["shortTest"] = NewShortTag(32767)
+	rootcomp["longTest"] = NewLongTag(9223372036854775807)
+	rootcomp["floatTest"] = NewFloatTag(0.49823147)
+	rootcomp["stringTest"] = NewStringTag("HELLO WORLD THIS IS A TEST STRING ÅÄÖ!")
+	rootcomp["intTest"] = NewIntTag(2147483647)
+	rootcomp["byteTest"] = NewByteTag(127)
+	rootcomp["doubleTest"] = NewDoubleTag(0.4931287132182315)
+
+	comp := make(TagCompound)
+	comp["ham"] = makeNested("Hampus", 0.75)
+	comp["egg"] = makeNested("Eggbert", 0.5)
+	rootcomp["nested compound test"] = Tag{TAG_Compound, comp}
+
+	listlong := make([]interface{}, 5)
+	for i := 0; i < 5; i++ {
+		listlong[i] = int64(i + 11)
+	}
+	rootcomp["listTest (long)"] = Tag{TAG_List, TagList{TAG_Long, listlong}}
+
+	listcomp := make([]interface{}, 2)
+	for i := 0; i < 2; i++ {
+		comp := make(TagCompound)
+		comp["name"] = NewStringTag(fmt.Sprintf("Compound tag #%d", i))
+		comp["created-on"] = NewLongTag(1264099775885)
+		listcomp[i] = comp
+	}
+	rootcomp["listTest (compound)"] = Tag{TAG_List, TagList{TAG_Compound, listcomp}}
+
+	data := make([]byte, 1000)
+	for n := 0; n < 1000; n++ {
+		data[n] = byteArrayTestSeries(n)
+	}
+	rootcomp["byteArrayTest (the first 1000 values of (n*n*255+n*7)%100, starting with n=0 (0, 62, 34, 16, 8, ...))"] = NewByteArrayTag(data)
+
+	tag := Tag{TAG_Compound, rootcomp}
+	buf := new(bytes.Buffer)
+
+	if err := WriteGzipdNamedTag(buf, "Level", tag); err != nil {
+		t.Fatalf("Could not write NBT data: %s", err)
+	}
+
+	testBigtest(buf, t)
 }

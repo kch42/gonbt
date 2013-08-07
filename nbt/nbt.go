@@ -82,7 +82,7 @@ func (t Tag) String() string {
 	return s
 }
 
-// TagCompund is the payload of a TAG_Compound.
+// TagCompund is the payload of a TAG_Compound. Initialize with make.
 type TagCompound map[string]Tag
 
 func readTagData(r io.Reader, tt TagType) (interface{}, error) {

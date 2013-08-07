@@ -19,9 +19,16 @@ func ReadGzipdNamedTag(r io.Reader) (Tag, string, error) {
 }
 
 // WriteGzipdNamedTag writes a gzip compressed named tag. See WriteNamedTag for more info.
-func WriteGzipdNamedTag(w io.Writer, name string, tag Tag) error {
+func WriteGzipdNamedTag(w io.Writer, name string, tag Tag) (outerr error) {
 	comp := gzip.NewWriter(w)
-	return WriteNamedTag(comp, name, tag)
+	defer func(){
+		err := comp.Close()
+		if outerr != nil {
+			outerr = err
+		}
+	}()
+	outerr = WriteNamedTag(comp, name, tag)
+	return
 }
 
 // ReadZlibdNamedTag reads a zlib compressed named tag. See ReadNamedTags for more info.
@@ -35,7 +42,13 @@ func ReadZlibdNamedTag(r io.Reader) (Tag, string, error) {
 }
 
 // WriteZlibdNamedTag writes a zlib compressed named tag. See WriteNamedTag for more info.
-func WriteZlibdNamedTag(w io.Writer, name string, tag Tag) error {
+func WriteZlibdNamedTag(w io.Writer, name string, tag Tag) (outerr error) {
 	comp := zlib.NewWriter(w)
+	defer func(){
+		err := comp.Close()
+		if outerr != nil {
+			outerr = err
+		}
+	}()
 	return WriteNamedTag(comp, name, tag)
 }
