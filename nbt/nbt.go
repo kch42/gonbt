@@ -2,9 +2,12 @@ package nbt
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/kch42/kagus"
 	"io"
+	"strconv"
 )
 
 type Tag struct {
@@ -15,6 +18,51 @@ type Tag struct {
 type TagList struct {
 	Type  TagType
 	Elems []interface{}
+}
+
+func (t Tag) String() string {
+	s := t.Type.String()
+	switch t.Type {
+	case TAG_Byte:
+		s += fmt.Sprintf(": 0x%02x", t.Payload.(byte))
+	case TAG_Short:
+		s += fmt.Sprintf(": %d", t.Payload.(int16))
+	case TAG_Int:
+		s += fmt.Sprintf(": %d", t.Payload.(int32))
+	case TAG_Long:
+		s += fmt.Sprintf(": %d", t.Payload.(int64))
+	case TAG_Float:
+		s += fmt.Sprintf(": %f", t.Payload.(float32))
+	case TAG_Double:
+		s += fmt.Sprintf(": %f", t.Payload.(float64))
+	case TAG_Byte_Array:
+		s += "\n" + kagus.Indent(hex.Dump(t.Payload.([]byte)), "  ")
+	case TAG_String:
+		s += ": " + strconv.Quote(t.Payload.(string))
+	case TAG_List:
+		l := t.Payload.(TagList)
+		s += " of " + l.Type.String() + ":"
+		for _, elem := range l.Elems {
+			s += "\n" + kagus.Indent(Tag{l.Type, elem}.String(), "  ")
+		}
+	case TAG_Compound:
+		s += ":"
+		comp := t.Payload.(TagCompound)
+		for k, v := range comp {
+			s += "\n" + kagus.Indent(strconv.Quote(k)+"  ->"+kagus.Indent(v.String(), "  "), "  ")
+		}
+		return s
+	case TAG_Int_Array:
+		l := t.Payload.([]int32)
+		s += ": "
+		sep := ""
+		for _, elem := range l {
+			s += sep + fmt.Sprintf("%d", elem)
+			sep = ", "
+		}
+	}
+
+	return s
 }
 
 type TagCompound map[string]Tag
