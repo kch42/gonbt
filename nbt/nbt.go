@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/kch42/kagus"
+	"github.com/silvasur/kagus"
 	"io"
 	"strconv"
 )

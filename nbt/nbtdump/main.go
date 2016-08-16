@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"fmt"
 	"os"
-	"github.com/kch42/gonbt/nbt"
+	"github.com/silvasur/gonbt/nbt"
 )
 
 func main() {
